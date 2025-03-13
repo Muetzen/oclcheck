@@ -17,7 +17,9 @@ class   ParseHeader
         */
         std::string parse (const std::string & filename);
 
+        std::string printErrorCodeTable (void);
         std::string printMethods (void);
+
     private:
         std::ifstream   mFile;
         int             mLine;  // Current line number in filename.
@@ -37,6 +39,8 @@ class   ParseHeader
 
         // skip until next ';'
         std::string skipStatement (void);
+
+        std::vector <std::string>   mClErrorDefines;
 
         struct parameter
         {

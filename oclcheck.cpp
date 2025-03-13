@@ -11,6 +11,11 @@
 
 #include <dlfcn.h>
 
+static std::string  initialize (void);
+static const char * errorString (cl_int code);
+
+#include "generated_methods.h"
+
 static std::string  initialize (void)
 {
     std::string ret;
@@ -18,4 +23,19 @@ static std::string  initialize (void)
     return ret;
 }
 
-#include "generated_methods.h"
+static const char * errorString (int code)
+{
+    static  char unknownCode [32];
+
+    for (size_t i = 0; i < sizeof (gClErrorCodes) / sizeof (gClErrorCodes [0]); ++i)
+    {
+        if (code == gClErrorCodes [i].mValue)
+        {
+            return gClErrorCodes [i].mName;
+        }
+    }
+
+    snprintf (unknownCode, sizeof (unknownCode), "UNKNOWN ERROR %d", code);
+    return unknownCode;
+}
+
