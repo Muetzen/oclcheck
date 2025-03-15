@@ -17,10 +17,11 @@ liboclcheck.so: oclcheck.o
 	g++ -g -Wall -fPIC -shared -o $@ $< -ldl
 
 test-clinfo: liboclcheck.so
-	LD_PRELOAD=./liboclcheck.so clinfo > /dev/null
+	OCLCHECK_LOGFILE=./clinfo.log LD_PRELOAD=./liboclcheck.so clinfo
+	cat clinfo.log
 
 clean:
-	rm -f *.o generate_oclcheck
+	rm -f *.o generate_oclcheck clinfo.log
 
 realclean: clean
 	rm -f liboclcheck.so

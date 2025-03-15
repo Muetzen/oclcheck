@@ -72,29 +72,29 @@ ParseHeader::printMethods (void)
         std::cout << "\tinitialize ();\n";
         // TODO: Error exit
 
-        std::cout << "\tstd::cerr << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
+        std::cout << "\t*gLogStream << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
         for (size_t j = 0; j < mMethods [i].mParameters.size (); ++j)
         {
-            std::cout << "\tstd::cerr << \"OCL>\\t\";\n";
+            std::cout << "\t*gLogStream << \"OCL>\\t\";\n";
             std::cout << "\tprintValue (" << mMethods [i].mParameters [j].mName
                 << ", \"" << mMethods [i].mParameters [j].mName << "\");\n";
 
             if (j < mMethods [i].mParameters.size () - 1)
             {
-                std::cout << "\tstd::cerr << \",\\n\";\n";
+                std::cout << "\t*gLogStream << \",\\n\";\n";
             }
             else
             {
-                std::cout << "\tstd::cerr << \"\\n\";\n";
+                std::cout << "\t*gLogStream << \"\\n\";\n";
             }
         }
         if (mMethods [i].mReturnType == "cl_int")
         {
-            std::cout << "\tstd::cerr << \"OCL> ) = \";\n";
+            std::cout << "\t*gLogStream << \"OCL> ) = \";\n";
         }
         else
         {
-            std::cout << "\tstd::cerr << \"OCL> )\\n\";\n";
+            std::cout << "\t*gLogStream << \"OCL> )\\n\";\n";
         }
 
         std::cout << "\t" << mMethods [i].mReturnType << "(* origMethod)\n";
@@ -135,7 +135,7 @@ ParseHeader::printMethods (void)
         // These methods return an cl-error code
         if (mMethods [i].mReturnType == "cl_int")
         {
-            std::cout << "\tstd::cerr << errorString (returnValue) << \"\\n\";\n";
+            std::cout << "\t*gLogStream << errorString (returnValue) << \"\\n\";\n";
         }
 
         if (mMethods [i].mReturnType != "void")
