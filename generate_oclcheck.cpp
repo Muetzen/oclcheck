@@ -12,7 +12,7 @@ int main (int argc, char **argv)
         return 1;
     }
 
-    ph.printErrorCodeTable ();
+    ph.printErrorStringMethod ();
     ph.printMethods ();
 
     return 0;

@@ -23,19 +23,3 @@ static std::string  initialize (void)
     return ret;
 }
 
-static const char * errorString (int code)
-{
-    static  char unknownCode [32];
-
-    for (size_t i = 0; i < sizeof (gClErrorCodes) / sizeof (gClErrorCodes [0]); ++i)
-    {
-        if (code == gClErrorCodes [i].mValue)
-        {
-            return gClErrorCodes [i].mName;
-        }
-    }
-
-    snprintf (unknownCode, sizeof (unknownCode), "UNKNOWN ERROR %d", code);
-    return unknownCode;
-}
-

@@ -17,7 +17,7 @@ class   ParseHeader
         */
         std::string parse (const std::string & filename);
 
-        std::string printErrorCodeTable (void);
+        std::string printErrorStringMethod (void);
         std::string printMethods (void);
 
     private:
@@ -64,6 +64,8 @@ class   ParseHeader
         std::string printMethodParameter (
                     const std::vector <struct parameter> & parameterList,
                     const std::string & indent = "\t");
+
+        std::string mLastComment;   // Used to determine the meaning of a #define in cl.h.
 };
 
 #endif
