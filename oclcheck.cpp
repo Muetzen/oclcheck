@@ -11,15 +11,24 @@
 
 #include <dlfcn.h>
 
-static std::string  initialize (void);
-static const char * errorString (cl_int code);
-
-#include "generated_methods.h"
-
 static std::string  initialize (void)
 {
     std::string ret;
 
     return ret;
 }
+
+template <typename T>
+void printValue (T val, const char * name)
+{
+    std::cerr << name << " = " << val;
+}
+
+template <>
+void printValue (const char * val, const char * name)
+{
+    std::cerr << name << " = \"" << val << "\"";
+}
+
+#include "generated_methods.h"
 
