@@ -18,6 +18,7 @@ class   ParseHeader
         std::string parse (const std::string & filename);
 
         std::string printErrorStringMethod (void);
+        std::string printClDeviceInfoMethod (void);
         std::string printMethods (void);
 
     private:
@@ -40,7 +41,8 @@ class   ParseHeader
         // skip until next ';'
         std::string skipStatement (void);
 
-        std::vector <std::string>   mClErrorDefines;
+        std::vector <std::string>   mClErrorCodes;
+        std::vector <std::string>   mClDeviceInfo;
 
         struct parameter
         {

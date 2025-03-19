@@ -50,6 +50,23 @@ void printValue (T val, const char * name)
     * gLogStream << name << " = " << val;
 }
 
+#define printOclType(type)                              \
+template <>                                                 \
+void printValue (type val, const char * name)               \
+{                                                           \
+    * gLogStream << name << " = " #type " (" << val << ")"; \
+}
+
+printOclType (cl_platform_id)
+printOclType (cl_context)
+printOclType (cl_device_id)
+printOclType (cl_command_queue)
+printOclType (cl_mem)
+printOclType (cl_sampler)
+printOclType (cl_program)
+printOclType (cl_kernel)
+printOclType (cl_event)
+
 template <>
 void printValue (const char * val, const char * name)
 {
