@@ -1,14 +1,16 @@
 all: liboclcheck.so
 
 parse_header.o: parse_header.h Makefile
-generate_oclcheck.o: Makefile
-oclcheck.o: Makefile generated_methods.h
+generate_oclcheck.o: parse_header.h Makefile
+oclcheck.o: generated_methods.h Makefile
+
+DEBUG := -g -fstack-protector
 
 %.o: %.cpp
-	g++ -g -Wall -fPIC -shared -c -o $@ $< 
+	g++ $(DEBUG) -Wall -fPIC -shared -c -o $@ $< 
 
 generate_oclcheck: generate_oclcheck.o parse_header.o
-	g++ -g -Wall -o $@ $^
+	g++ $(DEBUG) -Wall -o $@ $^
 
 generated_methods.h: generate_oclcheck
 	./generate_oclcheck > generated_methods.h
