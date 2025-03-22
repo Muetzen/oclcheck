@@ -105,9 +105,18 @@ ParseHeader::printMethods (void)
 
         ret = printMethodParameter (mMethods [i].mParameters);
 
-        std::cout << "{\n";
+        std::cout << "\n{\n";
         std::cout << "\tinitialize ();\n";
         // TODO: Error exit
+
+        if (mMethods [i].mName == "clRetainContext")
+        {
+            std::cout << "\tretainPointer (gContextVector, " << mMethods [i].mParameters [0].mName << ");\n";
+        }
+        else if (mMethods [i].mName == "clReleaseContext")
+        {
+            std::cout << "\treleasePointer (gContextVector, " << mMethods [i].mParameters [0].mName << ");\n";
+        }
 
         std::cout << "\t*gLogStream << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
         for (size_t j = 0; j < mMethods [i].mParameters.size (); ++j)
@@ -136,6 +145,16 @@ ParseHeader::printMethods (void)
                 std::cout << "\t*gLogStream << \"\\n\";\n";
             }
         }
+
+        if (has_errcode_ret (mMethods [i].mParameters))
+        {
+            std::cout << "\tcl_int  internal_error_code;\n";
+            std::cout << "\tif (errcode_ret == nullptr)\n";
+            std::cout << "\t{\n";
+            std::cout << "\t\terrcode_ret = &internal_error_code;\n";
+            std::cout << "\t}\n";
+        }
+
         if (mMethods [i].mReturnType == "cl_int")
         {
             std::cout << "\t*gLogStream << \"OCL> ) = \";\n";
@@ -186,6 +205,20 @@ ParseHeader::printMethods (void)
             std::cout << "\t*gLogStream << errorString (returnValue) << \"\\n\";\n";
         }
 
+        if (mMethods [i].mName == "clCreateContext" ||
+            mMethods [i].mName == "clCreateContextFromType")
+        {
+            std::cout << "\tif ( * errcode_ret == CL_SUCCESS)\n";
+            std::cout << "\t{\n";
+            std::cout << "\t\tcreatePointer (gContextVector, returnValue);\n";
+            std::cout << "\t}\n";
+        }
+
+        if (has_errcode_ret (mMethods [i].mParameters))
+        {
+            std::cout << "\t*gLogStream << \"OCL> +- errcode_ret = \" << errorString ( * errcode_ret) << \"\\n\";\n";
+        }
+
         if (mMethods [i].mReturnType != "void")
         {
             std::cout << "\treturn returnValue;\n";
@@ -212,15 +245,31 @@ ParseHeader::printMethodParameter (
         std::cout << pl [j].mName << " ";
 
         std::cout << pl [j].mTypeSuffix;
+        if (pl [j].mParameterList.empty () == false)
+        {
+            printMethodParameter (pl [j].mParameterList, indent + "\t");
+        }
         if (j < pl.size () - 1)
         {
             std::cout << ",";
         }
         std::cout << "\n";
     }
-    std::cout << indent << ")\n";
+    std::cout << indent << ")";
 
     return ret;
+}
+
+
+bool
+ParseHeader::has_errcode_ret (const std::vector <struct parameter> & pl)
+{
+    if (pl.empty ())
+    {
+        return false;
+    }
+
+    return pl [pl.size () - 1].mName == "errcode_ret";
 }
 
 
@@ -763,6 +812,8 @@ ParseHeader::parseMethodParameter (std::vector <struct parameter> & parameterLis
 
             // This should be ',' or ')':
             ret = readToken (token);
+
+            parameterList.push_back (p);
 
 //          std::cerr << "Parameter type: " << p.mTypePrefix
 //              << ", name: " << p.mName

@@ -67,6 +67,8 @@ class   ParseHeader
                     const std::vector <struct parameter> & parameterList,
                     const std::string & indent = "\t");
 
+        bool        has_errcode_ret (const std::vector <struct parameter> & parameterList);
+
         std::string mLastComment;   // Used to determine the meaning of a #define in cl.h.
 };
 

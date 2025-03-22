@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <stdlib.h>
 #include <string.h>
 
@@ -17,6 +18,95 @@ static std::ofstream gLogFile;
 static std::ostream  * gLogStream = & std::cerr;
 
 static bool gIsInitialized = false;
+
+struct pointer_info
+{
+    void    * mPointer;
+    int     mRetainCount = 0;
+    int     mReleaseCount = 0;
+};
+
+static std::vector <struct pointer_info> gContextVector;
+
+
+// TODO: locking
+static
+void createPointer (std::vector <struct pointer_info> & pointerList, void * pointer)
+{
+    struct pointer_info pi;
+
+    pi.mPointer = pointer;
+
+    pointerList.push_back (pi);
+}
+
+// TODO: locking
+static
+void retainPointer (std::vector <struct pointer_info> & pointerList, void * pointer)
+{
+    for (struct pointer_info & pi: pointerList)
+    {
+        if (pi.mPointer == pointer)
+        {
+            ++pi.mRetainCount;
+            return;
+        }
+    }
+
+    * gLogStream << "OCL> " << pointer << " not found in vector.\n";
+}
+
+// TODO: locking
+static
+void releasePointer (std::vector <struct pointer_info> & pointerList, void * pointer)
+{
+    std::vector <struct pointer_info>::iterator itEnd = pointerList.end ();
+    std::vector <struct pointer_info>::iterator it = pointerList.begin ();
+
+    for (; it != itEnd; ++it)
+    {
+        if (it->mPointer == pointer)
+        {
+            if (it->mReleaseCount == it->mRetainCount)
+            {
+                it = pointerList.erase (it);
+            }
+            else
+            {
+                ++it->mReleaseCount;
+            }
+            return;
+        }
+    }
+
+    * gLogStream << "OCL> " << pointer << " not found in vector.\n";
+
+    if (gLogFile.is_open ())
+    {
+        gLogStream = & std::cerr;
+        gLogFile.close ();
+    }
+}
+
+static void handle_atexit (void)
+{
+    * gLogStream << "OCL> Normal program termination.\n";
+
+    if (gContextVector.empty () == false)
+    {
+        * gLogStream << "OCL> " << gContextVector.size () << " contexts not released.\n";
+        for (struct pointer_info & pi: gContextVector)
+        {
+            * gLogStream << "OCL> Context at " << pi.mPointer
+                << ": retain count = " << pi.mRetainCount
+                << ", release count = " << pi.mReleaseCount << ".\n";
+        }
+    }
+    else
+    {
+        * gLogStream << "OCL> All created contexts were released.\n";
+    }
+}
 
 static void initialize (void)
 {
@@ -39,6 +129,8 @@ static void initialize (void)
                 * gLogStream << "OCL> " << strerror (errno) << "\n";
             }
         }
+
+        atexit (& handle_atexit);
 
         gIsInitialized = true;
     }
@@ -70,7 +162,18 @@ printOclType (cl_event)
 template <>
 void printValue (const char * val, const char * name)
 {
-    * gLogStream << name << " = \"" << val << "\"";
+    if (val == nullptr)
+    {
+        * gLogStream << name << " = nullptr";
+    }
+    else if (strcmp (name, "errcode_ret") == 0)
+    {
+        * gLogStream << name;
+    }
+    else
+    {
+        * gLogStream << name << " = \"" << val << "\"";
+    }
 }
 
 #include "generated_methods.h"
