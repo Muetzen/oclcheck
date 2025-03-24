@@ -26,8 +26,13 @@ struct pointer_info
     int     mReleaseCount = 0;
 };
 
-static std::vector <struct pointer_info> gContextVector;
-
+static std::vector <struct pointer_info> g_cl_context_vector;
+static std::vector <struct pointer_info> g_cl_command_queue_vector;
+static std::vector <struct pointer_info> g_cl_mem_vector;
+static std::vector <struct pointer_info> g_cl_sampler_vector;
+static std::vector <struct pointer_info> g_cl_program_vector;
+static std::vector <struct pointer_info> g_cl_kernel_vector;
+static std::vector <struct pointer_info> g_cl_event_vector;
 
 // TODO: locking
 static
@@ -92,20 +97,30 @@ static void handle_atexit (void)
 {
     * gLogStream << "OCL> Normal program termination.\n";
 
-    if (gContextVector.empty () == false)
-    {
-        * gLogStream << "OCL> " << gContextVector.size () << " contexts not released.\n";
-        for (struct pointer_info & pi: gContextVector)
-        {
-            * gLogStream << "OCL> Context at " << pi.mPointer
-                << ": retain count = " << pi.mRetainCount
-                << ", release count = " << pi.mReleaseCount << ".\n";
-        }
+#define OUTPUT_POINTER(vector, singular, plural)                                        \
+    if (vector.empty () == false)                                                       \
+    {                                                                                   \
+        * gLogStream << "OCL> " << vector.size () << " " plural " not released.\n";     \
+        for (struct pointer_info & pi: vector)                                          \
+        {                                                                               \
+            * gLogStream << "OCL> " singular " at " << pi.mPointer                      \
+                << ": retain count = " << pi.mRetainCount                               \
+                << ", release count = " << pi.mReleaseCount << ".\n";                   \
+        }                                                                               \
+        vector.clear ();                                                                \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+        * gLogStream << "OCL> All created " plural " were released.\n";                 \
     }
-    else
-    {
-        * gLogStream << "OCL> All created contexts were released.\n";
-    }
+
+    OUTPUT_POINTER (g_cl_context_vector, "Context", "contexts")
+    OUTPUT_POINTER (g_cl_command_queue_vector, "Command quueue", "command queues")
+    OUTPUT_POINTER (g_cl_mem_vector, "Memory object", "memory objects")
+    OUTPUT_POINTER (g_cl_sampler_vector, "Sampler", "samplers") 
+    OUTPUT_POINTER (g_cl_program_vector, "Program", "programs") 
+    OUTPUT_POINTER (g_cl_kernel_vector, "Kernel", "kernels") 
+    OUTPUT_POINTER (g_cl_event_vector, "Event", "events") 
 }
 
 static void initialize (void)

@@ -92,6 +92,22 @@ ParseHeader::printClDeviceInfoMethod (void)
     return ret;
 }
 
+struct
+{
+    const char * mType;
+    const char * mOpenClName;   // clRetain<mOpenClName>, and clRelease<mOpenClName>
+}
+gOpenClObjects [] =
+{
+    { "cl_context", "Context" },
+    { "cl_command_queue", "CommandQueue" },
+    { "cl_mem", "MemObject" },
+    { "cl_sampler", "Sampler" },
+    { "cl_program", "Program" },
+    { "cl_kernel", "Kernel" },
+    { "cl_event", "Event" }
+};
+
 std::string
 ParseHeader::printMethods (void)
 {
@@ -109,13 +125,36 @@ ParseHeader::printMethods (void)
         std::cout << "\tinitialize ();\n";
         // TODO: Error exit
 
-        if (mMethods [i].mName == "clRetainContext")
+        if (mMethods [i].mParameters.empty () == false)
         {
-            std::cout << "\tretainPointer (gContextVector, " << mMethods [i].mParameters [0].mName << ");\n";
-        }
-        else if (mMethods [i].mName == "clReleaseContext")
-        {
-            std::cout << "\treleasePointer (gContextVector, " << mMethods [i].mParameters [0].mName << ");\n";
+            if (strncmp (mMethods [i].mName.c_str (), "clRetain", strlen ("clRetain")) == 0)
+            {
+                std::string clname = mMethods [i].mName.substr (strlen ("clRetain"));
+                for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
+                {
+                    if (clname == gOpenClObjects [j].mOpenClName)
+                    {
+                        std::cout << "\tretainPointer (g_" << gOpenClObjects [j].mType << "_vector, "
+                            << mMethods [i].mParameters [0].mName << ");\n";
+
+                        break;
+                    }
+                }
+            }
+            else if (strncmp (mMethods [i].mName.c_str (), "clRelease", strlen ("clRelease")) == 0)
+            {
+                std::string clname = mMethods [i].mName.substr (strlen ("clRelease"));
+                for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
+                {
+                    if (clname == gOpenClObjects [j].mOpenClName)
+                    {
+                        std::cout << "\treleasePointer (g_" << gOpenClObjects [j].mType << "_vector, "
+                            << mMethods [i].mParameters [0].mName << ");\n";
+
+                        break;
+                    }
+                }
+            }
         }
 
         std::cout << "\t*gLogStream << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
@@ -205,13 +244,22 @@ ParseHeader::printMethods (void)
             std::cout << "\t*gLogStream << errorString (returnValue) << \"\\n\";\n";
         }
 
-        if (mMethods [i].mName == "clCreateContext" ||
-            mMethods [i].mName == "clCreateContextFromType")
+// TODO: clCreateSubDevices
+        if (mMethods [i].mReturnType != "void" &&
+            mMethods [i].mReturnType != "cl_int")
         {
-            std::cout << "\tif ( * errcode_ret == CL_SUCCESS)\n";
-            std::cout << "\t{\n";
-            std::cout << "\t\tcreatePointer (gContextVector, returnValue);\n";
-            std::cout << "\t}\n";
+            for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
+            {
+                if (mMethods [i].mReturnType == gOpenClObjects [j].mType)
+                {
+                    std::cout << "\tif ( * errcode_ret == CL_SUCCESS)\n";
+                    std::cout << "\t{\n";
+                    std::cout << "\t\tcreatePointer (g_" << gOpenClObjects [j].mType << "_vector, returnValue);\n";
+                    std::cout << "\t}\n";
+
+                    break;
+                }
+            }
         }
 
         if (has_errcode_ret (mMethods [i].mParameters))
