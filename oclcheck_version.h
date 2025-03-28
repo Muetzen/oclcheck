@@ -1,0 +1,6 @@
+#ifndef OCLCHECK_VERSION_H
+#define OCLCHECK_VERSION_H
+
+#define OCLCHECK_VERSION "0.1"
+
+#endif

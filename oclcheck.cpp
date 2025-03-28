@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <stacktrace>
 #include <vector>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,8 @@
 
 #include <dlfcn.h>
 
+#include "version.h"
+
 static std::ofstream gLogFile;
 static std::ostream  * gLogStream = & std::cerr;
 
@@ -21,9 +24,10 @@ static bool gIsInitialized = false;
 
 struct pointer_info
 {
-    void    * mPointer;
-    int     mRetainCount = 0;
-    int     mReleaseCount = 0;
+    void            * mPointer;
+    int             mRetainCount = 0;
+    int             mReleaseCount = 0;
+    std::stacktrace mCreateStack;
 };
 
 static std::vector <struct pointer_info> g_cl_context_vector;
@@ -41,6 +45,7 @@ void createPointer (std::vector <struct pointer_info> & pointerList, void * poin
     struct pointer_info pi;
 
     pi.mPointer = pointer;
+    pi.mCreateStack = std::stacktrace::current ();
 
     pointerList.push_back (pi);
 }
@@ -106,6 +111,11 @@ static void handle_atexit (void)
             * gLogStream << "OCL> " singular " at " << pi.mPointer                      \
                 << ": retain count = " << pi.mRetainCount                               \
                 << ", release count = " << pi.mReleaseCount << ".\n";                   \
+            for (const std::stacktrace_entry & entry: pi.mCreateStack)                  \
+            {                                                                           \
+                * gLogStream << "OCL>  " << std::to_string (entry) << "\n";             \
+            }                                                                           \
+            * gLogStream << "OCL>\n";                                                   \
         }                                                                               \
         vector.clear ();                                                                \
     }                                                                                   \
@@ -127,7 +137,7 @@ static void initialize (void)
 {
     if (gIsInitialized == false)
     {
-        std::cerr << "OCL> Initializing.\n";
+        std::cerr << "OCL> oclcheck version " OCLCHECK_VERSION " started.\n";
 
         const char * logfile = getenv ("OCLCHECK_LOGFILE");
         if (logfile != nullptr)

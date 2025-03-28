@@ -13,7 +13,7 @@ int main (int argc, char **argv)
     }
 
     ph.printErrorStringMethod ();
-    ph.printClDeviceInfoMethod ();
+    ph.printClTypeMethods ();
     ph.printMethods ();
 
     return 0;
