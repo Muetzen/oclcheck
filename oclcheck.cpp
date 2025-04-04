@@ -15,7 +15,7 @@
 
 #include <dlfcn.h>
 
-#include "version.h"
+#include "oclcheck_version.h"
 
 static std::ofstream gLogFile;
 static std::ostream  * gLogStream = & std::cerr;
@@ -167,23 +167,6 @@ void printValue (T val, const char * name)
     * gLogStream << name << " = " << val;
 }
 
-#define printOclType(type)                              \
-template <>                                                 \
-void printValue (type val, const char * name)               \
-{                                                           \
-    * gLogStream << name << " = " #type " (" << val << ")"; \
-}
-
-printOclType (cl_platform_id)
-printOclType (cl_context)
-printOclType (cl_device_id)
-printOclType (cl_command_queue)
-printOclType (cl_mem)
-printOclType (cl_sampler)
-printOclType (cl_program)
-printOclType (cl_kernel)
-printOclType (cl_event)
-
 template <>
 void printValue (const char * val, const char * name)
 {
@@ -200,6 +183,79 @@ void printValue (const char * val, const char * name)
         * gLogStream << name << " = \"" << val << "\"";
     }
 }
+
+static
+void
+printOpenClProgramSource (cl_uint count, const char **strings, const size_t *lengths)
+{
+    if (count == 0)
+    {
+        return;
+    }
+
+    if (strings == nullptr)
+    {
+        * gLogStream << "OCL>\tstrings = nullptr,\n";
+        return;
+    }
+
+    for (cl_uint i = 0; i < count; ++i)
+    {
+        if (strings [i] == nullptr)
+        {
+            * gLogStream << "OCL>\tstrings [" << i << "] = nullptr,\n";
+            return;
+        }
+    }
+
+    * gLogStream << "OCL>\tstrings [] = \"\n";
+    for (cl_uint i = 0; i < count; ++i)
+    {
+        std::string program;
+        if (lengths != nullptr)
+        {
+            program.assign (strings [i], lengths [i]);
+        }
+        else
+        {
+            program = strings [i];
+        }
+
+        while (program.empty () == false)
+        {
+            size_t  pos = program.find ('\n');
+            if (pos != std::string::npos)
+            {
+                * gLogStream << "OCL>\t\t" << program.substr (0, pos) << "\n";
+                program.erase (0, pos + 1);
+            }
+            else
+            {
+                * gLogStream << "OCL>\t\t" << program << "\n";
+                program.clear ();
+            }
+        }
+    }
+    * gLogStream << "OCL>\t\",\n";
+}
+
+
+#define printOclType(type)                              \
+template <>                                                 \
+void printValue (type val, const char * name)               \
+{                                                           \
+    * gLogStream << name << " = " #type " (" << val << ")"; \
+}
+
+printOclType (cl_platform_id)
+printOclType (cl_context)
+printOclType (cl_device_id)
+printOclType (cl_command_queue)
+printOclType (cl_mem)
+printOclType (cl_sampler)
+printOclType (cl_program)
+printOclType (cl_kernel)
+printOclType (cl_event)
 
 #include "generated_methods.h"
 

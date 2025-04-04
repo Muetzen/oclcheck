@@ -2,7 +2,7 @@ all: liboclcheck.so
 
 parse_header.o: parse_header.h Makefile
 generate_oclcheck.o: parse_header.h Makefile
-oclcheck.o: generated_methods.h version.h Makefile
+oclcheck.o: generated_methods.h oclcheck_version.h Makefile
 
 DEBUG := -g
 

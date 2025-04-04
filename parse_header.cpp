@@ -206,6 +206,14 @@ ParseHeader::printMethods (void)
         std::cout << "\t*gLogStream << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
         for (size_t j = 0; j < mMethods [i].mParameters.size (); ++j)
         {
+            // Special case for program source
+            if (mMethods [i].mName == "clCreateProgramWithSource" &&
+                mMethods [i].mParameters [j].mName == "strings")
+            {
+                std::cout << "\tprintOpenClProgramSource (count, strings, lengths);\n";
+                continue;
+            }
+
             std::cout << "\t*gLogStream << \"OCL>\\t\";\n";
 
             std::string printMethod = "printValue";
