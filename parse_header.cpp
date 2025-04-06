@@ -417,6 +417,13 @@ ParseHeader::parseFile (void)
             std::string value;
             ret = readDefineValue (value);
 
+            // Skip some things
+            if (name.starts_with ("CL_ME_") ||
+                name.starts_with ("CL_AVC_ME_"))
+            {
+                continue;
+            }
+
             // TODO: Search for duplicate numeric values
             std::string searchName;
             if (name.ends_with ("_KHR"))
@@ -436,6 +443,7 @@ ParseHeader::parseFile (void)
                     if (ti.mDefineName == searchName)
                     {
                         found = true;
+                        std::cerr << "#### Skipping " << searchName << "\n";
                         break;
                     }
                 }
@@ -446,29 +454,25 @@ ParseHeader::parseFile (void)
                 }
             }
 
-            if (name.ends_with ("_KHR") == false &&
-                name.ends_with ("_INTEL") == false)
+            // TODO: this assumes that there is a /* Error Codes */ comment in front of the error codes.
+            // It will not work correctly, if this comment changes, or if there are additional comments between
+            // the corresponding defines.
+            if (mLastComment == "Error Codes" ||    // cl.h
+                mLastComment == "Error codes")      // cl_ext.h
             {
-                // TODO: this assumes that there is a /* Error Codes */ comment in front of the error codes.
-                // It will not work correctly, if this comment changes, or if there are additional comments between
-                // the corresponding defines.
-                if (mLastComment == "Error Codes" ||    // cl.h
-                    mLastComment == "Error codes")      // cl_ext.h
+                mClErrorCodes.push_back (name);
+            }
+            else
+            {
+                for (size_t i = 0; i < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++i)
                 {
-                    mClErrorCodes.push_back (name);
-                }
-                else
-                {
-                    for (size_t i = 0; i < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++i)
+                    if (mLastComment == gOpenClTypes [i].mType)
                     {
-                        if (mLastComment == gOpenClTypes [i].mType)
-                        {
-                            struct openclTypeInfo   ti;
-                            ti.mType = mLastComment;
-                            ti.mDefineName = name;
-                            mTypeInfo.push_back (ti);
-                            break;
-                        }
+                        struct openclTypeInfo   ti;
+                        ti.mType = mLastComment;
+                        ti.mDefineName = name;
+                        mTypeInfo.push_back (ti);
+                        break;
                     }
                 }
             }
