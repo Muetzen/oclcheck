@@ -443,7 +443,6 @@ ParseHeader::parseFile (void)
                     if (ti.mDefineName == searchName)
                     {
                         found = true;
-                        std::cerr << "#### Skipping " << searchName << "\n";
                         break;
                     }
                 }
