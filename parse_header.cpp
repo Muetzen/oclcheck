@@ -12,6 +12,8 @@ std::string
 ParseHeader::parse (const std::string & filename)
 {
     mLine = 1;
+    mLastComment.clear ();
+
     mFile.open (filename);  
     if (mFile.good () == false)
     {
@@ -118,7 +120,7 @@ ParseHeader::printClTypeMethods (void)
         {
             if (mTypeInfo [j].mType == gOpenClTypes [i].mType)
             {
-                // This is deprecated, and has the same value as
+                // CL_DEVICE_QUEUE_PROPERTIES is deprecated, and has the same value as
                 // CL_DEVICE_QUEUE_ON_HOST_PROPERTIES:
                 if (mTypeInfo [j].mDefineName != "CL_DEVICE_QUEUE_PROPERTIES")
                 {
@@ -173,7 +175,7 @@ ParseHeader::printMethods (void)
 
         if (mMethods [i].mParameters.empty () == false)
         {
-            if (strncmp (mMethods [i].mName.c_str (), "clRetain", strlen ("clRetain")) == 0)
+            if (mMethods [i].mName.starts_with ("clRetain"))
             {
                 std::string clname = mMethods [i].mName.substr (strlen ("clRetain"));
                 for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
@@ -187,7 +189,7 @@ ParseHeader::printMethods (void)
                     }
                 }
             }
-            else if (strncmp (mMethods [i].mName.c_str (), "clRelease", strlen ("clRelease")) == 0)
+            else if (mMethods [i].mName.starts_with ("clRelease"))
             {
                 std::string clname = mMethods [i].mName.substr (strlen ("clRelease"));
                 for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
@@ -415,24 +417,58 @@ ParseHeader::parseFile (void)
             std::string value;
             ret = readDefineValue (value);
 
-// TODO: this assumes that there is a /* Error Codes */ comment in front of the error codes.
-// It will not work correctly, if this comment changes, or if there are additional comments between
-// the corresponding defines.
-            if (mLastComment == "Error Codes")
+            // TODO: Search for duplicate numeric values
+            std::string searchName;
+            if (name.ends_with ("_KHR"))
             {
-                mClErrorCodes.push_back (name);
+                searchName = name.substr (0, name.length () - strlen ("_KHR")); 
             }
-            else
+            else if (name.ends_with ("_INTEL"))
             {
-                for (size_t i = 0; i < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++i)
+                searchName = name.substr (0, name.length () - strlen ("_INTEL")); 
+            }
+
+            if (searchName.empty () == false)
+            {
+                bool    found = false;
+                for (struct openclTypeInfo & ti: mTypeInfo)
                 {
-                    if (mLastComment == gOpenClTypes [i].mType)
+                    if (ti.mDefineName == searchName)
                     {
-                        struct openclTypeInfo   ti;
-                        ti.mType = mLastComment;
-                        ti.mDefineName = name;
-                        mTypeInfo.push_back (ti);
+                        found = true;
                         break;
+                    }
+                }
+
+                if (found == true)
+                {
+                    continue;
+                }
+            }
+
+            if (name.ends_with ("_KHR") == false &&
+                name.ends_with ("_INTEL") == false)
+            {
+                // TODO: this assumes that there is a /* Error Codes */ comment in front of the error codes.
+                // It will not work correctly, if this comment changes, or if there are additional comments between
+                // the corresponding defines.
+                if (mLastComment == "Error Codes" ||    // cl.h
+                    mLastComment == "Error codes")      // cl_ext.h
+                {
+                    mClErrorCodes.push_back (name);
+                }
+                else
+                {
+                    for (size_t i = 0; i < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++i)
+                    {
+                        if (mLastComment == gOpenClTypes [i].mType)
+                        {
+                            struct openclTypeInfo   ti;
+                            ti.mType = mLastComment;
+                            ti.mDefineName = name;
+                            mTypeInfo.push_back (ti);
+                            break;
+                        }
                     }
                 }
             }
@@ -475,7 +511,7 @@ ParseHeader::parseFile (void)
                 ret = readToken (m.mReturnType);
             }
 
-            if (strncmp (m.mReturnType.c_str (), "CL_API_PREFIX__VERSION_", strlen ("CL_API_PREFIX__VERSION_")) == 0)
+            if (m.mReturnType.starts_with ("CL_API_PREFIX__VERSION_"))
             {
                 ret = readToken (m.mReturnType);
             }
@@ -824,18 +860,22 @@ ParseHeader::skipMultiLineComment (void)
         }
         else if (c == '*' && mFile.peek () == '/')
         {
-            if (isspace (newComment [0]))
-            {
-                newComment.erase (0, 1);
-            }
-            if (newComment.empty () == false && isspace (newComment [newComment.length () - 1]))
-            {
-                newComment.erase (newComment.length () - 1);
-            }
             // read '/'
             mFile.get (c);
 
-            if (newComment == "Error Codes" ||
+            while (isspace (newComment [0]) || newComment [0] == '*')
+            {
+                newComment.erase (0, 1);
+            }
+
+            while (newComment.empty () == false &&
+                (isspace (newComment [newComment.length () - 1]) || newComment [newComment.length () - 1] == '*'))
+            {
+                newComment.erase (newComment.length () - 1);
+            }
+
+            if (newComment == "Error Codes" ||      // cl.h
+                newComment == "Error codes" ||      // cl_ext.h
                 strncmp (newComment.c_str (), "cl_", 3) == 0)
             {
                 mLastComment = newComment;

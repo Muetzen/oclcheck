@@ -5,7 +5,16 @@ int main (int argc, char **argv)
 {
     ParseHeader ph;
 
-    std::string ret = ph.parse ("/usr/include/CL/cl.h");
+    std::string ret;
+
+    ret = ph.parse ("/usr/include/CL/cl.h");
+    if ( ! ret.empty ())
+    {
+        std::cerr << ret << "\n";
+        return 1;
+    }
+
+    ret = ph.parse ("/usr/include/CL/cl_ext.h");
     if ( ! ret.empty ())
     {
         std::cerr << ret << "\n";
