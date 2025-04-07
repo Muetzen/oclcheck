@@ -60,6 +60,7 @@ ParseHeader::printErrorStringMethod (void)
 struct
 {
     const char * mType;
+    bool        mIsBitfield = false;
 }
 gOpenClTypes [] =
 {
@@ -93,7 +94,15 @@ gOpenClTypes [] =
     { "cl_command_type" },
     { "cl_buffer_create_type" },
     { "cl_profiling_info" },
-    { "cl_khronos_vendor_id" }
+    { "cl_khronos_vendor_id" },
+    // bitfields
+    { "cl_device_type", true },
+    { "cl_device_fp_config", true },
+    { "cl_device_exec_capabilities", true },
+    { "cl_command_queue_properties", true },
+    // TODO: { "cl_mem_flags", true },      // same as cl_svm_mem_flags
+    { "cl_mem_migration_flags", true },
+    { "cl_map_flags", true }
 };
 
 std::string
@@ -108,32 +117,81 @@ ParseHeader::printClTypeMethods (void)
         std::cout << "void print_" << gOpenClTypes [i].mType << " (" << gOpenClTypes [i].mType << " val, const char * name)\n";
         std::cout << "{\n";
 
-        // TODO: Use thread local storage
-        std::cout << "\tstatic char unknown [64];\n";
-
         std::cout << "\t* gLogStream << name << \" = " << gOpenClTypes [i].mType << " \";\n";
 
-        std::cout << "\tswitch (val)\n";
-        std::cout << "\t{\n";
-
-        for (size_t j = 0; j < mTypeInfo.size (); ++j)
+        if (gOpenClTypes [i].mIsBitfield == false)
         {
-            if (mTypeInfo [j].mType == gOpenClTypes [i].mType)
+            // TODO: Use thread local storage
+            std::cout << "\tstatic char unknown [64];\n";
+
+            std::cout << "\tswitch (val)\n";
+            std::cout << "\t{\n";
+
+            for (size_t j = 0; j < mTypeInfo.size (); ++j)
             {
-                // CL_DEVICE_QUEUE_PROPERTIES is deprecated, and has the same value as
-                // CL_DEVICE_QUEUE_ON_HOST_PROPERTIES:
-                if (mTypeInfo [j].mDefineName != "CL_DEVICE_QUEUE_PROPERTIES")
+                if (mTypeInfo [j].mType == gOpenClTypes [i].mType)
                 {
-                    std::cout << "\tcase " << mTypeInfo [j].mDefineName << ": * gLogStream << \"(" << mTypeInfo [j].mDefineName << ")\";\n";
-                    std::cout << "\t\treturn;\n";
+                    // CL_DEVICE_QUEUE_PROPERTIES is deprecated, and has the same value as
+                    // CL_DEVICE_QUEUE_ON_HOST_PROPERTIES:
+                    if (mTypeInfo [j].mDefineName != "CL_DEVICE_QUEUE_PROPERTIES")
+                    {
+                        std::cout << "\tcase " << mTypeInfo [j].mDefineName << ": * gLogStream << \"(" << mTypeInfo [j].mDefineName << ")\";\n";
+                        std::cout << "\t\treturn;\n";
+                    }
                 }
             }
+
+            std::cout << "\t}\n";
+
+            std::cout << "\tsnprintf (unknown, sizeof (unknown), \"(UNKNOWN 0x%X)\", (unsigned int)(val));\n";
+            std::cout << "\t* gLogStream << unknown;\n";
+        }
+        else
+        {
+            std::cout << "\tstd::string string_value;\n";
+            std::cout << "\tbool        first = true;\n";
+
+            bool    firstDefineFound = false;
+
+            for (size_t j = 0; j < mTypeInfo.size (); ++j)
+            {
+                if (mTypeInfo [j].mType == gOpenClTypes [i].mType)
+                {
+                    if (mTypeInfo [j].mDefineName.ends_with ("_ALL") == false)
+                    {
+                        std::cout << "\tif (val & " << mTypeInfo [j].mDefineName << ")\n";
+                        std::cout << "\t{\n";
+                        if (firstDefineFound == true)
+                        {
+                            std::cout << "\t\tif (first == false)\n";
+                            std::cout << "\t\t{\n";
+                            std::cout << "\t\t\tstring_value += \" | \";\n";
+                            std::cout << "\t\t}\n";
+                        }
+                        std::cout << "\t\tstring_value += \"" << mTypeInfo [j].mDefineName << "\";\n";
+                        std::cout << "\t\tfirst = false;\n";
+                        std::cout << "\t}\n";
+                        firstDefineFound = true;
+                    }
+                    else
+                    {
+                        // ..._ALL:
+                        std::cout << "\tif (val == " << mTypeInfo [j].mDefineName << ")\n";
+                        std::cout << "\t{\n";
+                        std::cout << "\t\tstring_value = \"" << mTypeInfo [j].mDefineName << "\";\n";
+                        std::cout << "\t\tfirst = false;\n";
+                        std::cout << "\t}\n";
+                    }
+                }
+            }
+
+            std::cout << "\tif (string_value.empty ())\n";
+            std::cout << "\t{\n";
+            std::cout << "\t\tstring_value = \"UNKNOWN\";\n";
+            std::cout << "\t}\n";
+            std::cout << "\t* gLogStream << \"(\" << string_value << \") (0x\" << std::hex << val << std::dec << \")\";\n";
         }
 
-        std::cout << "\t}\n";
-
-        std::cout << "\tsnprintf (unknown, sizeof (unknown), \"(UNKNOWN 0x%X)\", (unsigned int)(val));\n";
-        std::cout << "\t* gLogStream << unknown;\n";
         std::cout << "}\n";
     }
 
@@ -875,6 +933,11 @@ ParseHeader::skipMultiLineComment (void)
                 (isspace (newComment [newComment.length () - 1]) || newComment [newComment.length () - 1] == '*'))
             {
                 newComment.erase (newComment.length () - 1);
+            }
+
+            if (newComment.ends_with (" - bitfield"))
+            {
+                newComment.erase (newComment.length () - strlen (" - bitfield"));
             }
 
             if (newComment == "Error Codes" ||      // cl.h

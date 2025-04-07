@@ -50,6 +50,8 @@ class   ParseHeader
         };
         std::vector <struct openclTypeInfo>     mTypeInfo;
 
+        std::vector <struct openclTypeInfo>     mBitfieldInfo;
+
         struct parameter
         {
             std::string mTypePrefix;
