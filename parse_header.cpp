@@ -114,16 +114,15 @@ ParseHeader::printClTypeMethods (void)
 
     for (size_t i = 0; i < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++i)
     {
-        std::cout << "void print_" << gOpenClTypes [i].mType << " (" << gOpenClTypes [i].mType << " val, const char * name)\n";
+        std::cout << "std::string " << gOpenClTypes [i].mType << "_to_string (" << gOpenClTypes [i].mType << " val, const char * name)\n";
         std::cout << "{\n";
+        std::cout << "\tstd::stringstream   stream;\n";
 
-        std::cout << "\t* gLogStream << name << \" = " << gOpenClTypes [i].mType << " \";\n";
+        std::cout << "\t" R"!(stream << name << " = )!" << gOpenClTypes [i].mType << " \";\n";
 
         if (gOpenClTypes [i].mIsBitfield == false)
         {
             // TODO: Use thread local storage
-            std::cout << "\tstatic char unknown [64];\n";
-
             std::cout << "\tswitch (val)\n";
             std::cout << "\t{\n";
 
@@ -135,16 +134,16 @@ ParseHeader::printClTypeMethods (void)
                     // CL_DEVICE_QUEUE_ON_HOST_PROPERTIES:
                     if (mTypeInfo [j].mDefineName != "CL_DEVICE_QUEUE_PROPERTIES")
                     {
-                        std::cout << "\tcase " << mTypeInfo [j].mDefineName << ": * gLogStream << \"(" << mTypeInfo [j].mDefineName << ")\";\n";
-                        std::cout << "\t\treturn;\n";
+                        std::cout << "\tcase " << mTypeInfo [j].mDefineName << ": stream << \"(" << mTypeInfo [j].mDefineName << ")\";\n";
+                        std::cout << "\t\treturn stream.str ();\n";
                     }
                 }
             }
 
             std::cout << "\t}\n";
 
-            std::cout << "\tsnprintf (unknown, sizeof (unknown), \"(UNKNOWN 0x%X)\", (unsigned int)(val));\n";
-            std::cout << "\t* gLogStream << unknown;\n";
+            std::cout << R"!(stream << "(UNKNOWN 0x" << std::hex << val << ")";)!" "\n";
+            std::cout << "return stream.str ();\n";
         }
         else
         {
@@ -189,7 +188,8 @@ ParseHeader::printClTypeMethods (void)
             std::cout << "\t{\n";
             std::cout << "\t\tstring_value = \"UNKNOWN\";\n";
             std::cout << "\t}\n";
-            std::cout << "\t* gLogStream << \"(\" << string_value << \") (0x\" << std::hex << val << std::dec << \")\";\n";
+            std::cout << "\t" R"!(stream << "(" << string_value << ") (0x" << std::hex << val << std::dec << ")";)!" "\n";
+            std::cout << "return stream.str ();\n";
         }
 
         std::cout << "}\n";
@@ -231,6 +231,8 @@ ParseHeader::printMethods (void)
         std::cout << "\tinitialize ();\n";
         // TODO: Error exit
 
+        std::cout << "\tstd::stringstream stream;\n";
+
         if (mMethods [i].mParameters.empty () == false)
         {
             if (mMethods [i].mName.starts_with ("clRetain"))
@@ -263,42 +265,42 @@ ParseHeader::printMethods (void)
             }
         }
 
-        std::cout << "\t*gLogStream << \"OCL> " << mMethods [i].mName << " (\\n\";\n";
+        std::cout << "\t" R"!(stream << "OCL> )!" << mMethods [i].mName << R"!( (\n";)!" "\n";
         for (size_t j = 0; j < mMethods [i].mParameters.size (); ++j)
         {
             // Special case for program source
             if (mMethods [i].mName == "clCreateProgramWithSource" &&
                 mMethods [i].mParameters [j].mName == "strings")
             {
-                std::cout << "\tprintOpenClProgramSource (count, strings, lengths);\n";
+                std::cout << "\tstream << openClProgramSource_to_string (count, strings, lengths);\n";
                 continue;
             }
 
-            std::cout << "\t*gLogStream << \"OCL>\\t\";\n";
+            std::cout << "\t" R"!(stream << "OCL>\t";)!" "\n";
 
-            std::string printMethod = "printValue";
+            std::string printMethod = "value_to_string";
 
             for (size_t k = 0; k < sizeof (gOpenClTypes) / sizeof (gOpenClTypes [0]); ++k)
             {
                 if (mMethods [i].mParameters [j].mTypePrefix == gOpenClTypes [k].mType)
                 {
-                    printMethod = "print_";
-                    printMethod += gOpenClTypes [k].mType;
+                    printMethod = gOpenClTypes [k].mType;
+                    printMethod += "_to_string";
                     break;
                 }
             }
 
-            std::cout << "\t" << printMethod  << " ("
+            std::cout << "\tstream << " << printMethod  << " ("
                 << mMethods [i].mParameters [j].mName
-                    << ", \"" << mMethods [i].mParameters [j].mName << "\");\n";
+                    << R"!(, ")!" << mMethods [i].mParameters [j].mName << R"!(");)!" "\n";
 
             if (j < mMethods [i].mParameters.size () - 1)
             {
-                std::cout << "\t*gLogStream << \",\\n\";\n";
+                std::cout << "\t" R"!(stream << ",\n";)!" "\n";
             }
             else
             {
-                std::cout << "\t*gLogStream << \"\\n\";\n";
+                std::cout << "\t" R"!(stream << "\n";)!" "\n";
             }
         }
 
@@ -313,11 +315,11 @@ ParseHeader::printMethods (void)
 
         if (mMethods [i].mReturnType == "cl_int")
         {
-            std::cout << "\t*gLogStream << \"OCL> ) = \";\n";
+            std::cout << "\t" R"!(stream << "OCL> ) = ";)!" "\n";
         }
         else
         {
-            std::cout << "\t*gLogStream << \"OCL> )\\n\";\n";
+            std::cout << "\t" R"!(stream << "OCL> )\n";)!" "\n";
         }
 
         std::cout << "\t" << mMethods [i].mReturnType << "(* origMethod)\n";
@@ -358,8 +360,15 @@ ParseHeader::printMethods (void)
         // These methods return an cl-error code
         if (mMethods [i].mReturnType == "cl_int")
         {
-            std::cout << "\t*gLogStream << errorString (returnValue) << \"\\n\";\n";
+            std::cout << "\t" R"!(stream << errorString (returnValue) << "\n";)!" "\n";
         }
+
+        if (has_errcode_ret (mMethods [i].mParameters))
+        {
+            std::cout << "\t" R"!(stream << "OCL> +- errcode_ret = " << errorString ( * errcode_ret) << "\n";)!" "\n";
+        }
+
+        std::cout << "\tstd::lock_guard lock (gGlobalMutex);\n";
 
 // TODO: clCreateSubDevices
         if (mMethods [i].mReturnType != "void" &&
@@ -379,10 +388,7 @@ ParseHeader::printMethods (void)
             }
         }
 
-        if (has_errcode_ret (mMethods [i].mParameters))
-        {
-            std::cout << "\t*gLogStream << \"OCL> +- errcode_ret = \" << errorString ( * errcode_ret) << \"\\n\";\n";
-        }
+        std::cout << "\t*gLogStream << stream.str ();\n";
 
         if (mMethods [i].mReturnType != "void")
         {
