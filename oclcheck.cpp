@@ -154,8 +154,6 @@ static void initialize (void)
 
         if (gIsInitialized == false)
         {
-            std::cerr << "OCL> oclcheck version " OCLCHECK_VERSION " started.\n";
-
             const char * logfile = getenv ("OCLCHECK_LOGFILE");
             if (logfile != nullptr)
             {
@@ -171,6 +169,8 @@ static void initialize (void)
                     * gLogStream << "OCL> " << strerror (errno) << "\n";
                 }
             }
+
+            * gLogStream << "OCL> oclcheck version " OCLCHECK_VERSION " started.\n";
 
             atexit (& handle_atexit);
 
