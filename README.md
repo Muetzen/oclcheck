@@ -7,19 +7,23 @@ leaks, due to missing calls to clReleaseContext and similar functions.
 
 Compile:
 
-This can be compiled with "make". You will need an cl.h header installed
-in "/usr/include/CL/cl.h". (See generate\_oclcheck.cpp, if you need to
+This can be compiled with "make". You will need the cl.h and cl\_ext.h
+headers in "/usr/include/CL/". (See generate\_oclcheck.cpp, if you need to
 change the location.)
 
-I've compiled it with Ubuntu 24.04, and there are some assumption abouot
-the format of the cl.h header file built into parse\_header.cpp.
+I've compiled this with Ubuntu 24.04. There are some assumptions about
+the format of cl.h and cl\_ext.h built into parse\_header.cpp. Therefore
+this might or might not compile with different linux distributions.
+
+
+Install:
+
+Copy oclcheck and liboclcheck.so into the same directory inside your
+PATH.
 
 
 Usage:
 
-LD\_PRELOAD=./liboclcheck.so your/program
+oclcheck [-l logfile] your/program [program parameters]
 
-You can also set OCLCHECK\_LOGFILE to point to a logfile.
-Attention: This will be overwritten, if it exists.
-
-OCLCHECK\_LOGFILE=example.log LD\_PRELOAD=./liboclcheck.so your/program
+Attention: This logfile will be overwritten, if it exists.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export LD_PRELOAD=./liboclcheck.so
+export LD_PRELOAD=$(dirname $0)/liboclcheck.so
 
 end=0
 

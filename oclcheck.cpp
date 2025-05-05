@@ -49,7 +49,7 @@ void createPointer (std::vector <struct pointer_info> & pointerList, void * poin
     struct pointer_info pi;
 
     pi.mPointer = pointer;
-    pi.mCreateStack = std::stacktrace::current ();
+    pi.mCreateStack = std::stacktrace::current (/* skip = */ 1);
 
     pointerList.push_back (pi);
 }
