@@ -205,6 +205,7 @@ struct
 }
 gOpenClObjects [] =
 {
+    { "cl_device", "Device" },
     { "cl_context", "Context" },
     { "cl_command_queue", "CommandQueue" },
     { "cl_mem", "MemObject" },
@@ -370,7 +371,18 @@ ParseHeader::printMethods (void)
 
         std::cout << "\tstd::lock_guard lock (gGlobalMutex);\n";
 
-// TODO: clCreateSubDevices
+        // clCreateSubDevices can create several devices
+        if (mMethods [i].mName == "clCreateSubDevices")
+        {
+            std::cout << "\tif (returnValue == CL_SUCCESS && num_devices_ret != nullptr)\n";
+            std::cout << "\t{\n";
+            std::cout << "\t\tfor (cl_uint i = 0; i < *num_devices_ret; ++i)\n";
+            std::cout << "\t\t{\n";
+            std::cout << "\t\t\tcreatePointer (g_cl_device_vector, out_devices [i]);\n";
+            std::cout << "\t\t}\n";
+            std::cout << "\t}\n";
+        }
+
         if (mMethods [i].mReturnType != "void" &&
             mMethods [i].mReturnType != "cl_int")
         {

@@ -34,6 +34,7 @@ struct pointer_info
     std::stacktrace mCreateStack;
 };
 
+static std::vector <struct pointer_info> g_cl_device_vector;
 static std::vector <struct pointer_info> g_cl_context_vector;
 static std::vector <struct pointer_info> g_cl_command_queue_vector;
 static std::vector <struct pointer_info> g_cl_mem_vector;

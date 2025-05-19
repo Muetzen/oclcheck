@@ -26,4 +26,4 @@ Usage:
 
 oclcheck [-l logfile] your/program [program parameters]
 
-Attention: This logfile will be overwritten, if it exists.
+Attention: The logfile will be overwritten, if it exists.
