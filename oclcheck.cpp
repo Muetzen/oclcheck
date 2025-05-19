@@ -132,6 +132,7 @@ static void handle_atexit (void)
         * gLogStream << "OCL> All created " plural " were released.\n";                 \
     }
 
+    OUTPUT_POINTER (g_cl_device_vector, "Device", "devices")
     OUTPUT_POINTER (g_cl_context_vector, "Context", "contexts")
     OUTPUT_POINTER (g_cl_command_queue_vector, "Command quueue", "command queues")
     OUTPUT_POINTER (g_cl_mem_vector, "Memory object", "memory objects")
