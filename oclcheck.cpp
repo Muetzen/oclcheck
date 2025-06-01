@@ -42,6 +42,7 @@ static std::vector <struct pointer_info> g_cl_sampler_vector;
 static std::vector <struct pointer_info> g_cl_program_vector;
 static std::vector <struct pointer_info> g_cl_kernel_vector;
 static std::vector <struct pointer_info> g_cl_event_vector;
+static std::vector <struct pointer_info> g_cl_svm_vector;
 
 // TODO: locking
 static
@@ -140,6 +141,7 @@ static void handle_atexit (void)
     OUTPUT_POINTER (g_cl_program_vector, "Program", "programs") 
     OUTPUT_POINTER (g_cl_kernel_vector, "Kernel", "kernels") 
     OUTPUT_POINTER (g_cl_event_vector, "Event", "events") 
+    OUTPUT_POINTER (g_cl_svm_vector, "SVM", "SVMs") 
 
     if (gLogFile.is_open ())
     {

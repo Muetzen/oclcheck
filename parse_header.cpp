@@ -264,6 +264,10 @@ ParseHeader::printMethods (void)
                     }
                 }
             }
+            else if (mMethods [i].mName == "clSVMFree")
+            {
+                std::cout << "\treleasePointer (g_cl_svm_vector, svm_pointer);\n";
+            }
         }
 
         std::cout << "\t" R"!(stream << "OCL> )!" << mMethods [i].mName << R"!( (\n";)!" "\n";
@@ -382,20 +386,29 @@ ParseHeader::printMethods (void)
             std::cout << "\t\t}\n";
             std::cout << "\t}\n";
         }
-
-        if (mMethods [i].mReturnType != "void" &&
-            mMethods [i].mReturnType != "cl_int")
+        else if (mMethods [i].mName == "clSVMAlloc")
         {
-            for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
+            std::cout << "\tif (returnValue != nullptr)\n";
+            std::cout << "\t{\n";
+            std::cout << "\t\tcreatePointer (g_cl_svm_vector, returnValue);\n";
+            std::cout << "\t}\n";
+        }
+        else
+        {
+            if (mMethods [i].mReturnType != "void" &&
+                mMethods [i].mReturnType != "cl_int")
             {
-                if (mMethods [i].mReturnType == gOpenClObjects [j].mType)
+                for (size_t j = 0; j < sizeof (gOpenClObjects) / sizeof (gOpenClObjects [0]); ++j)
                 {
-                    std::cout << "\tif ( * errcode_ret == CL_SUCCESS)\n";
-                    std::cout << "\t{\n";
-                    std::cout << "\t\tcreatePointer (g_" << gOpenClObjects [j].mType << "_vector, returnValue);\n";
-                    std::cout << "\t}\n";
+                    if (mMethods [i].mReturnType == gOpenClObjects [j].mType)
+                    {
+                        std::cout << "\tif ( * errcode_ret == CL_SUCCESS)\n";
+                        std::cout << "\t{\n";
+                        std::cout << "\t\tcreatePointer (g_" << gOpenClObjects [j].mType << "_vector, returnValue);\n";
+                        std::cout << "\t}\n";
 
-                    break;
+                        break;
+                    }
                 }
             }
         }
