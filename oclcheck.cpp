@@ -2,6 +2,7 @@
 
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
+#include <CL/cl_gl.h>
 
 #include <string>
 #include <iostream>

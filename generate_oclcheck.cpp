@@ -21,6 +21,13 @@ int main (int argc, char **argv)
         return 1;
     }
 
+    ret = ph.parse ("/usr/include/CL/cl_gl.h");
+    if ( ! ret.empty ())
+    {
+        std::cerr << ret << "\n";
+        return 1;
+    }
+
     ph.printErrorStringMethod ();
     ph.printClTypeMethods ();
     ph.printMethods ();
