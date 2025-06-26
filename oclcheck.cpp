@@ -32,6 +32,8 @@ struct pointer_info
     void            * mPointer;
     int             mRetainCount = 0;
     int             mReleaseCount = 0;
+    int             mMapCount = 0;
+    int             mUnmapCount = 0;
     std::stacktrace mCreateStack;
 };
 
@@ -57,7 +59,6 @@ void createPointer (std::vector <struct pointer_info> & pointerList, void * poin
     pointerList.push_back (pi);
 }
 
-// TODO: locking
 static
 std::string retainPointer (std::vector <struct pointer_info> & pointerList, void * pointer)
 {
@@ -77,7 +78,6 @@ std::string retainPointer (std::vector <struct pointer_info> & pointerList, void
     return stream.str ();
 }
 
-// TODO: locking
 static
 std::string releasePointer (std::vector <struct pointer_info> & pointerList, void * pointer)
 {
@@ -86,23 +86,78 @@ std::string releasePointer (std::vector <struct pointer_info> & pointerList, voi
     std::vector <struct pointer_info>::iterator itEnd = pointerList.end ();
     std::vector <struct pointer_info>::iterator it = pointerList.begin ();
 
+    std::stringstream stream;
+
     for (; it != itEnd; ++it)
     {
         if (it->mPointer == pointer)
         {
             if (it->mReleaseCount == it->mRetainCount)
             {
+                if (it->mMapCount > it->mUnmapCount)
+                {
+                    stream << "OCL> " << pointer << " still mapped during release.\n";
+                }
                 it = pointerList.erase (it);
             }
             else
             {
                 ++it->mReleaseCount;
             }
+            return stream.str ();
+        }
+    }
+
+    stream << "OCL> " << pointer << " not found in vector.\n";
+
+    return stream.str ();
+}
+
+static
+std::string mapPointer (std::vector <struct pointer_info> & pointerList, void * pointer)
+{
+    std::lock_guard lock (gGlobalMutex);
+
+    for (struct pointer_info & pi: pointerList)
+    {
+        if (pi.mPointer == pointer)
+        {
+            ++pi.mMapCount;
             return std::string ();
         }
     }
 
+    std::stringstream   stream;
+    stream << "OCL> " << pointer << " not found in vector.\n";
+    return stream.str ();
+}
+
+static
+std::string unmapPointer (std::vector <struct pointer_info> & pointerList, void * pointer)
+{
+    std::lock_guard lock (gGlobalMutex);
+
+    std::vector <struct pointer_info>::iterator itEnd = pointerList.end ();
+    std::vector <struct pointer_info>::iterator it = pointerList.begin ();
+
     std::stringstream stream;
+
+    for (; it != itEnd; ++it)
+    {
+        if (it->mPointer == pointer)
+        {
+            if (it->mUnmapCount > it->mMapCount)
+            {
+                stream << "OCL> " << pointer << " already unmapped.\n";
+            }
+            else
+            {
+                ++it->mUnmapCount;
+            }
+            return stream.str ();
+        }
+    }
+
     stream << "OCL> " << pointer << " not found in vector.\n";
 
     return stream.str ();

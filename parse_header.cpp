@@ -268,6 +268,25 @@ ParseHeader::printMethods (void)
             {
                 std::cout << "\treleasePointer (g_cl_svm_vector, svm_pointer);\n";
             }
+            else if (mMethods [i].mName == "clEnqueueMapBuffer" ||
+                     mMethods [i].mName == "clEnqueueMapImage")
+            {
+                std::cout << "\tmapPointer (g_cl_mem_vector, "
+                    << mMethods [i].mParameters [1].mName
+                    << ");\n";
+            }
+            else if (mMethods [i].mName == "clEnqueueUnmapMemObject")
+            {
+                std::cout << "\tunmapPointer (g_cl_mem_vector, memobj);\n";
+            }
+            else if (mMethods [i].mName.starts_with ("clEnqueueSVMMap"))
+            {
+                std::cout << "\tmapPointer (g_cl_svm_vector, svm_ptr);\n";
+            }
+            else if (mMethods [i].mName.starts_with ("clEnqueueSVMUnmap"))
+            {
+                std::cout << "\tunmapPointer (g_cl_mem_vector, svm_ptr);\n";
+            }
         }
 
         std::cout << "\t" R"!(stream << "OCL> )!" << mMethods [i].mName << R"!( (\n";)!" "\n";
