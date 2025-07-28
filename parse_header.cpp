@@ -100,7 +100,8 @@ gOpenClTypes [] =
     { "cl_device_fp_config", true },
     { "cl_device_exec_capabilities", true },
     { "cl_command_queue_properties", true },
-    // TODO: { "cl_mem_flags", true },      // same as cl_svm_mem_flags
+    { "cl_mem_flags", true },
+    { "cl_svm_mem_flags", true },
     { "cl_mem_migration_flags", true },
     { "cl_map_flags", true }
 };
@@ -577,6 +578,19 @@ ParseHeader::parseFile (void)
                     {
                         struct openclTypeInfo   ti;
                         ti.mType = mLastComment;
+                        ti.mDefineName = name;
+                        mTypeInfo.push_back (ti);
+                        break;
+                    }
+
+                    if (mLastComment == "cl_mem_flags and cl_svm_mem_flags")
+                    {
+                        struct openclTypeInfo   ti;
+                        ti.mType = "cl_mem_flags";
+                        ti.mDefineName = name;
+                        mTypeInfo.push_back (ti);
+
+                        ti.mType = "cl_svm_mem_flags";
                         ti.mDefineName = name;
                         mTypeInfo.push_back (ti);
                         break;
