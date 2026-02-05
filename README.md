@@ -13,11 +13,11 @@ Compile
 -------
 
 The liboclcheck library can be compiled with `make`. You will need the `cl.h`
-and `cl\_ext.h` headers in `/usr/include/CL/`. (See `generate\_oclcheck.cpp`,
+and `cl_ext.h` headers in `/usr/include/CL/`. (See `generate_oclcheck.cpp`,
 if you need to change the location of these header files.)
 
 I've compiled the library with Ubuntu 24.04. There are some assumptions about
-the format of `cl.h` and `cl\_ext.h` built into `parse\_header.cpp`. Therefore
+the format of `cl.h` and `cl_ext.h` built into `parse_header.cpp`. Therefore
 this might or might not compile with different linux distributions.
 
 
