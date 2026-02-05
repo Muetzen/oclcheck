@@ -1,29 +1,37 @@
-oclcheck is a shared library, which supports in debugging OpenCL problems.
+oclcheck
+========
+
+oclcheck is a shell script, which starts a program with the liboclcheck
+library preloaded. This can be used, to debug certain OpenCL problems.
 
 This is work in progress, but it is possible to obtain a trace of all
-OpenCL calls of a program. The library should also check for memory
-leaks, due to missing calls to clReleaseContext and similar functions.
+OpenCL calls of a program. The library also checks for memory leaks, due
+to missing calls to clReleaseContext and similar functions.
 
 
-Compile:
+Compile
+-------
 
-This can be compiled with "make". You will need the cl.h and cl\_ext.h
-headers in "/usr/include/CL/". (See generate\_oclcheck.cpp, if you need to
-change the location.)
+The liboclcheck library can be compiled with `make`. You will need the `cl.h`
+and `cl\_ext.h` headers in `/usr/include/CL/`. (See `generate\_oclcheck.cpp`,
+if you need to change the location of these header files.)
 
-I've compiled this with Ubuntu 24.04. There are some assumptions about
-the format of cl.h and cl\_ext.h built into parse\_header.cpp. Therefore
+I've compiled the library with Ubuntu 24.04. There are some assumptions about
+the format of `cl.h` and `cl\_ext.h` built into `parse\_header.cpp`. Therefore
 this might or might not compile with different linux distributions.
 
 
-Install:
+Install
+-------
 
-Copy oclcheck and liboclcheck.so into the same directory inside your
+Copy `oclcheck` and `liboclcheck.so` into the same directory inside your
 PATH.
 
 
 Usage:
 
+```
 oclcheck [-l logfile] your/program [program parameters]
+```
 
-Attention: The logfile will be overwritten, if it exists.
+Attention: An existing logfile will be overwritten.
